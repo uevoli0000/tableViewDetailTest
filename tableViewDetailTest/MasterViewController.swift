@@ -7,16 +7,30 @@
 //
 
 import UIKit
-
+struct DataJSON : Decodable {
+    let name:String
+    let items : [DetailJSON]
+}
+struct DetailJSON : Decodable {
+    let name:String
+    let desc:String
+}
 class MasterViewController: UITableViewController {
 
     var detailViewController: DetailViewController? = nil
     var objects = [Any]()
-
+    var datalist = [DataJSON]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        do {
+            datalist = try Common.loadJSONfromLocalFile(type: [DataJSON].self, _filename: "data", _extension: "json")
+        }catch{
+            print(error)
+        }
+        
         navigationItem.leftBarButtonItem = editButtonItem
 
         let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(insertNewObject(_:)))
@@ -56,19 +70,47 @@ class MasterViewController: UITableViewController {
     // MARK: - Table View
 
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
+        return datalist.count
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return objects.count
+        return datalist[section].items.count
+//        return objects.count
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return datalist[section].name
+    }
+    
+    override func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        
+        let  headerCell = tableView.dequeueReusableCell(withIdentifier: "CustomHeaderCell") as! CustomTableViewCell
+        headerCell.backgroundColor = UIColor.cyan
+        
+        headerCell.headerLabel!.text = datalist[section].name
+        
+        return headerCell
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        let object = objects[indexPath.row] as! NSDate
-        cell.textLabel!.text = object.description
+        //let object = objects[indexPath.row] as! NSDate
+        //cell.textLabel!.text = object.description
+        print("cellForRowAt : \(indexPath)")
+
+        let str = datalist[indexPath.section].items[indexPath.row].name
+        cell.textLabel!.text = str
+        
         return cell
+    }
+    
+    override func sectionIndexTitles(for tableView: UITableView) -> [String]? {
+        var strArray = [String]()
+        for i in 0..<datalist.count {
+            strArray.append(datalist[i].name)
+        }
+        return strArray
     }
 
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
